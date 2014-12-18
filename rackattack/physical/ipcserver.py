@@ -10,11 +10,12 @@ from rackattack.physical import network
 
 
 class IPCServer(threading.Thread):
-    def __init__(self, tcpPort, publicIP, osmosisServerIP, allocations, hosts):
+    def __init__(self, tcpPort, publicIP, osmosisServerIP, allocations, hosts, dnsmasq):
         self._publicIP = publicIP
         self._osmosisServerIP = osmosisServerIP
         self._allocations = allocations
         self._hosts = hosts
+        self._dnsmasq = dnsmasq
         self._context = zmq.Context()
         self._socket = self._context.socket(zmq.REP)
         self._socket.bind("tcp://*:%d" % tcpPort)
@@ -73,6 +74,12 @@ class IPCServer(threading.Thread):
             allocation = self._allocations.byIndex(id)
             allocation.heartbeat()
         return heartbeat.HEARTBEAT_OK
+
+    def _cmd_disablepxe(self, mac):
+        self._dnsmasq.ignorePXEforSpecificMac(mac)
+
+    def _cmd_enablepxe(self, mac):
+        self._dnsmasq.removeIgnorePXEforSpecificMac(mac)
 
     def _findNode(self, allocationID, nodeID):
         allocation = self._allocations.byIndex(allocationID)
